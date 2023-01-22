@@ -17,11 +17,38 @@ INPUT_IMAGES = "block"
 MAPPING_IMAGE = "D:/Seafile/Main/Main2/Bilder/Character/87.webp"
 THUMBNAIL_IMAGE_SIZE = (32, 32)
 
-def get_files(path):
+def get_files(path: str) -> list[str]:
+    """
+    Get files inside a given path
+
+    This will only return the first layer of files, without any subdirectories
+
+    Parameters
+    ----------
+    path: str
+        Path to the folder which shall be inspected
+    """
     return [join(path, f) for f in listdir(path) if isfile(join(path, f))]
 
 
-def analyse_color(file):
+def analyse_color(file: str) -> dict[str, any]:
+    """
+    Returns the most dominant color of a given image
+
+    This will use kmeans to extract color clusters
+
+    Parameters
+    ----------
+    file: str
+        Path to the image which should be inspected
+
+    Returns
+    -------
+    dict[str, any]
+        file: input parameter file
+        color: The most dominant color
+        data: A dictionary containing the processed file as PIL
+    """
     NUM_CLUSTERS = 1
 
     try:
@@ -44,7 +71,15 @@ def analyse_color(file):
         pass
 
 
-def create_color_map(images):
+def create_color_map(images: list[dict[str, any]]) -> None:
+    """
+    Creates an output image with a block representation of each available color for the input images
+
+    Parameters
+    ----------
+    images: list[dict[str, any]]
+        List of images returned from ``analyse_color(file: str) -> dict[str, any]``
+    """
     IMAGES_PER_ROW = 10
     SQUARE_SIZE = 32
 
@@ -63,13 +98,40 @@ def create_color_map(images):
     im.save('chart.png', "PNG")
 
 
-def transform_input_image(img):
+def transform_input_image(img: str):
+    """
+    Crops a given image to ``MAX_RESOLUTION`` and transforms it into an np array in RGB colorspace
+
+    Parameters
+    ----------
+    images: str
+        Path to the image
+
+    Returns
+    -------
+    NDArray
+        cropped RGB image
+    """
     im = Image.open(img)
     im.thumbnail(MAX_RESOLUTION, Image.Resampling.LANCZOS)
     im.convert('RGB')
     return np.array(im)
 
-def generate_color_map(image_colors):
+def generate_color_map(image_colors: list[dict[str, any]]) -> dict[str, dict[str, any]]:
+    """
+    Transforms a list of color information dicts from ``create_color_map```to a dict with color
+    as its key of color information dicts
+
+    Parameters
+    ----------
+    image_colors: list[dict[str, any]]
+        list of color information dicts
+
+    Returns
+    -------
+    dict[str, dict[str, any]]
+        Dict with color as its key
+    """
     colors = {}
     for img in image_colors:
         color = tuple(int(img['color'][i:i+2], 16) for i in (0, 2, 4))
@@ -77,6 +139,19 @@ def generate_color_map(image_colors):
     return colors
 
 def closest(color_data: tuple):
+    """
+    Find the clostest color out of a list of colors
+
+    Parameters
+    ----------
+    color_data: tuple
+        tuple containing the list of color as first parameter and the color as its seconds parameter
+
+    Returns
+    -------
+    tuple:
+        RGB tuple with the clostest color
+    """
     colors = np.array(list(color_data[0].keys()))
     color = np.array(color_data[1])
     distances = np.sqrt(np.sum((colors-color)**2,axis=1))
@@ -84,8 +159,22 @@ def closest(color_data: tuple):
     smallest_distance = colors[index_of_smallest[0]]
     return (smallest_distance[0], color_data[0][tuple(smallest_distance[0])]['data'])
 
-def color_to_collage(img_obj, shape):
-    print("creating collage")
+def color_to_collage(img_obj: list[tuple], shape: tuple):
+    """
+    Find the clostest color out of a list of colors
+
+    Parameters
+    ----------
+    img_obj: list[tuple]
+        flat list of rgb values of the image
+    shape: tuple
+        original dimensions of the image
+
+    Returns
+    -------
+    Image:
+        Image collage object
+    """
     x_size = shape[1]
     y_size = shape[0]
     new_im = Image.new('RGB', (x_size*THUMBNAIL_IMAGE_SIZE[0], y_size*THUMBNAIL_IMAGE_SIZE[1]))
@@ -96,27 +185,35 @@ def color_to_collage(img_obj, shape):
     return new_im
 
 
-def find_closest(image, color_map):
+def find_closest(image: np.ndarray, color_map: dict[str, dict[str, any]]):
+    """
+    Convert a image into a custom color palette of images
+
+    Parameters
+    ----------
+    image: np.ndarray
+        numpy array of RGB image information
+    color_map: dict[str, dict[str, Any]]
+        Map of available colors given from ``generate_color_map``
+
+    Returns
+    -------
+    Image:
+        Image collage object
+    """
     original_shape = image.shape
     img = image.reshape(-1, image.shape[-1])
     with Pool(CPU_THREADS) as p:
         el = [(color_map, color) for color in img]
-        colors, img_obj = zip(*p.map(closest, el))
-        img = np.array(list(colors))
+        _, img_obj = zip(*p.map(closest, el))
         return color_to_collage(img_obj, original_shape)
-    # img = np.reshape(img, original_shape)
-    return None
 
 
 def generate_collage(image_folder: str, mapping_image: str):
-    print("Start Processing images")
     image_map = []
     with Pool(CPU_THREADS) as p:
         image_map= p.map(analyse_color, get_files(image_folder))
     image_map = list(filter(lambda im: im is not None and len(im['color']) == 6, image_map))
-    #print("Creating Color Map Preview")
-    #create_color_map(image_map)
-    print("Transform Original Image")
     image_map = generate_color_map(image_map)
     image = transform_input_image(mapping_image)
 
