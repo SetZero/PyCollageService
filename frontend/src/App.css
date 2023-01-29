@@ -1,0 +1,14 @@
+.App {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+
+  background: linear-gradient(45deg, var(--main-color), #4c62a3);
+}
+
+.header {
+  text-align: center;
+  font-weight: bolder;
+  color: var(--main-color);
+}

@@ -1,0 +1,28 @@
+.wrapper{
+    width: 430px;
+  }
+  .wrapper header{
+    color: var(--main-color);
+    text-align: center;
+  }
+  .wrapper form{
+    height: 167px;
+    display: flex;
+    cursor: pointer;
+    margin: 30px 0;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    border-radius: 5px;
+    border: 2px dashed var(--main-color);
+  }
+  form :where(i, p){
+    color: var(--main-color);
+  }
+  form i{
+    font-size: 50px;
+  }
+  form p{
+    margin-top: 15px;
+    font-size: 16px;
+  }
