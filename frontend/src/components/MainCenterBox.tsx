@@ -8,7 +8,8 @@ import UploadBox from './UploadBox';
 import './style/MainCenterBox.css'
 import ImagePreview, { ImageInfo } from './ImagePreview';
 import { useState } from 'react';
-import { Alert } from '@mui/material';
+import { Alert, Container } from '@mui/material';
+import UploadStepper from './UploadStepper';
 
 function MainCenterBox() {
   let imageList: ImageInfo[] = [];
@@ -61,8 +62,13 @@ function MainCenterBox() {
         <Typography variant="h4" component="div" className='header'>
           Image to Collage
         </Typography>
-        <UploadBox onUpload={uploadHandler} />
-        <ImagePreview imageList={images} />
+        <Container maxWidth="sm">
+          <UploadBox onUpload={uploadHandler} />
+          <ImagePreview imageList={images} />
+        </Container>
+        <Container>
+          <UploadStepper />
+        </Container>
       </CardContent>
       <CardActions>
         <Button size="small">About</Button>
